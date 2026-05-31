@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vocallabs.ai — Product Teardown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,400&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Azeret+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:       #0f0d0b;
+    --surface:  #181510;
+    --surface2: #201c17;
+    --border:   rgba(255,235,190,0.08);
+    --border2:  rgba(255,235,190,0.14);
+    --accent:   #c8873a;
+    --accent2:  #e8a04a;
+    --accent3:  #d4c4a0;
+    --cream:    #f0e6d0;
+    --rust:     #b85c38;
+    --sage:     #7a9e82;
+    --text:     #e8dcc8;
+    --muted:    #7a7060;
+    --muted2:   #5a5248;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.72;
+    overflow-x: hidden;
+  }
+
+  /* grain overlay */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
+    opacity: 0.6;
+  }
+
+  /* warm glow top-right */
+  body::before {
+    content: '';
+    position: fixed; z-index: 0; pointer-events: none;
+    width: 700px; height: 700px;
+    top: -300px; right: -300px;
+    background: radial-gradient(circle, rgba(200,135,58,0.07) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+
+  /* ── NAV ─────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,13,11,0.88);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 880px; margin: 0 auto; padding: 0 28px;
+    display: flex; align-items: center;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .nav-inner::-webkit-scrollbar { display: none; }
+  nav a {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px; font-weight: 400;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none;
+    padding: 13px 15px; white-space: nowrap;
+    border-bottom: 1.5px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  nav a:hover { color: var(--cream); border-bottom-color: var(--accent); }
+
+  /* ── HEADER ──────────────────────────── */
+  header { padding: 80px 0 64px; border-bottom: 1px solid var(--border); }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(40px, 6.5vw, 64px);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    color: var(--cream);
+    margin-bottom: 18px;
+  }
+  h1 em { font-style: italic; color: var(--accent2); }
+
+  .header-sub {
+    font-size: 16px; color: var(--muted);
+    font-weight: 400; max-width: 520px;
+    margin-bottom: 36px; line-height: 1.65;
+  }
+
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 28px;
+    font-family: 'Azeret Mono', monospace;
+    font-size: 11px; color: var(--muted);
+  }
+  .meta-item { display: flex; align-items: center; gap: 8px; }
+  .meta-item svg { flex-shrink: 0; }
+  .meta-item strong { color: var(--text); font-weight: 400; }
+
+  /* ── SECTIONS ────────────────────────── */
+  section { padding: 68px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+
+  .section-label {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, rgba(200,135,58,0.3), transparent);
+    max-width: 200px;
+  }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(24px, 3.8vw, 32px);
+    font-weight: 500; color: var(--cream);
+    letter-spacing: -0.015em; margin-bottom: 12px;
+    line-height: 1.15;
+  }
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 19px; font-weight: 500;
+    color: var(--cream); margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  p { color: rgba(232,220,200,0.72); margin-bottom: 12px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── SNAPSHOT GRID ───────────────────── */
+  .snapshot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    gap: 1px; margin-top: 32px;
+    border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden;
+  }
+  .snap-card {
+    background: var(--surface); padding: 20px 18px;
+    transition: background 0.2s;
+  }
+  .snap-card:hover { background: var(--surface2); }
+  .snap-label {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .snap-val {
+    font-family: 'Fraunces', serif;
+    font-size: 22px; font-weight: 500;
+    color: var(--cream); line-height: 1.1;
+  }
+  .snap-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  /* ── SWOT ────────────────────────────── */
+  .swot-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-top: 28px;
+  }
+  @media (max-width: 580px) { .swot-grid { grid-template-columns: 1fr; } }
+
+  .sw-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 18px;
+  }
+  .sw-box.str { border-top: 2px solid var(--sage); }
+  .sw-box.weak { border-top: 2px solid var(--rust); }
+  .sw-box.opp { border-top: 2px solid var(--accent2); }
+  .sw-box.thr { border-top: 2px solid var(--muted); }
+
+  .sw-title {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sw-box.str .sw-title { color: var(--sage); }
+  .sw-box.weak .sw-title { color: var(--rust); }
+  .sw-box.opp .sw-title { color: var(--accent2); }
+  .sw-box.thr .sw-title { color: var(--muted); }
+
+  .sw-list { list-style: none; }
+  .sw-list li {
+    font-size: 13px; color: rgba(232,220,200,0.65);
+    padding: 4px 0 4px 16px; position: relative;
+    border-bottom: 1px solid rgba(255,235,190,0.05);
+    line-height: 1.55;
+  }
+  .sw-list li:last-child { border-bottom: none; }
+  .sw-list li::before {
+    content: '–'; position: absolute; left: 0;
+    color: var(--muted2); font-size: 11px; top: 5px;
+  }
+
+  /* ── ICP GRID ────────────────────────── */
+  .icp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px; margin-top: 28px;
+  }
+  .icp-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 18px 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .icp-icon {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  }
+  .icp-industry {
+    font-family: 'Fraunces', serif;
+    font-size: 14px; font-weight: 500;
+    color: var(--cream); margin-bottom: 5px;
+  }
+  .icp-pain { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  /* ── COMP TABLE ──────────────────────── */
+  .comp-wrap { overflow-x: auto; margin-top: 28px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border2);
+    font-weight: 400;
+  }
+  tbody tr {
+    border-bottom: 1px solid rgba(255,235,190,0.04);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: rgba(255,235,190,0.02); }
+  tbody tr.hl { background: rgba(200,135,58,0.06); }
+  td { padding: 10px 14px; color: rgba(232,220,200,0.65); vertical-align: top; }
+  td:first-child { color: var(--cream); font-weight: 500; }
+
+  .badge {
+    display: inline-block;
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.04em;
+    padding: 2px 8px; border-radius: 3px;
+  }
+  .badge.g { background: rgba(122,158,130,0.12); color: var(--sage); border: 1px solid rgba(122,158,130,0.22); }
+  .badge.r { background: rgba(184,92,56,0.12); color: var(--rust); border: 1px solid rgba(184,92,56,0.22); }
+  .badge.y { background: rgba(200,135,58,0.12); color: var(--accent2); border: 1px solid rgba(200,135,58,0.22); }
+  .badge.n { background: rgba(90,82,72,0.2); color: var(--muted); border: 1px solid rgba(90,82,72,0.3); }
+
+  /* ── FEEDBACK CARDS ──────────────────── */
+  .fb-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0;
+    margin-bottom: 18px; overflow: hidden;
+    transition: border-color 0.25s;
+  }
+  .fb-card:hover { border-color: var(--border2); }
+
+  .fb-card-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; padding: 24px 24px 20px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .fb-num {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px; color: var(--muted); letter-spacing: 0.1em;
+    margin-bottom: 5px;
+  }
+  .fb-title {
+    font-family: 'Fraunces', serif;
+    font-size: 17px; font-weight: 500;
+    color: var(--cream); line-height: 1.25;
+    letter-spacing: -0.01em; margin-bottom: 4px;
+  }
+  .fb-subtitle { font-size: 12.5px; color: var(--muted); }
+
+  .fb-pillar {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 4px 10px;
+    border-radius: 3px; white-space: nowrap;
+    flex-shrink: 0;
+    background: rgba(200,135,58,0.08);
+    border: 1px solid rgba(200,135,58,0.2);
+    color: var(--accent2);
+  }
+
+  .c2 .fb-pillar { background: rgba(122,158,130,0.08); border-color: rgba(122,158,130,0.2); color: var(--sage); }
+  .c3 .fb-pillar { background: rgba(184,92,56,0.08); border-color: rgba(184,92,56,0.2); color: var(--rust); }
+  .c4 .fb-pillar { background: rgba(212,196,160,0.08); border-color: rgba(212,196,160,0.2); color: var(--accent3); }
+  .c5 .fb-pillar { background: rgba(90,82,72,0.15); border-color: rgba(90,82,72,0.3); color: var(--muted); }
+
+  .obs-cols {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+  }
+  @media (max-width: 640px) { .obs-cols { grid-template-columns: 1fr; } }
+
+  .obs-col {
+    padding: 18px 20px;
+    border-right: 1px solid var(--border);
+  }
+  .obs-col:last-child { border-right: none; }
+
+  .obs-col-label {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .lbl-obs { color: var(--accent3); }
+  .lbl-prob { color: var(--rust); }
+  .lbl-ship { color: var(--sage); }
+
+  .obs-col p { font-size: 13px; line-height: 1.6; }
+
+  .fb-foot {
+    padding: 12px 20px; background: rgba(255,235,190,0.02);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 20px;
+    flex-wrap: wrap;
+  }
+  .fb-foot-label {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted2);
+  }
+  .dots { display: flex; gap: 4px; align-items: center; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1px solid var(--border2);
+  }
+  .dot.on { background: var(--accent); border-color: var(--accent); }
+  .fb-foot-group { display: flex; align-items: center; gap: 8px; }
+
+  /* ── NOTE BOX ────────────────────────── */
+  .note-box {
+    background: rgba(200,135,58,0.05);
+    border: 1px solid rgba(200,135,58,0.15);
+    border-radius: 7px; padding: 14px 18px;
+    font-size: 13.5px; color: rgba(232,220,200,0.65);
+    margin-top: 20px; line-height: 1.65;
+  }
+  .note-box strong { color: var(--accent2); font-weight: 500; }
+
+  /* ── COLLAB CARDS ────────────────────── */
+  .collab-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-top: 24px;
+  }
+  @media (max-width: 580px) { .collab-grid { grid-template-columns: 1fr; } }
+
+  .collab-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 18px 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+  .collab-card:hover { border-color: var(--border2); }
+  .collab-icon {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  }
+  .collab-name {
+    font-family: 'Fraunces', serif;
+    font-size: 15px; font-weight: 500;
+    color: var(--cream); margin-bottom: 3px;
+  }
+  .collab-type {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .collab-why { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+  /* ── PRIORITY ────────────────────────── */
+  .pri-list { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+  .pri-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 16px;
+    transition: border-color 0.2s;
+  }
+  .pri-item:hover { border-color: var(--border2); }
+  .pri-rank {
+    font-family: 'Fraunces', serif;
+    font-size: 28px; font-weight: 300; font-style: italic;
+    color: rgba(232,220,200,0.1); flex-shrink: 0; width: 36px;
+    line-height: 1;
+  }
+  .pri-body { flex: 1; }
+  .pri-title { font-size: 14px; font-weight: 500; color: var(--cream); margin-bottom: 2px; }
+  .pri-reason { font-size: 12px; color: var(--muted); }
+  .pri-tag {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 3px 9px;
+    border-radius: 3px; flex-shrink: 0;
+  }
+  .pri-tag.q { background: rgba(122,158,130,0.1); color: var(--sage); border: 1px solid rgba(122,158,130,0.2); }
+  .pri-tag.m { background: rgba(200,135,58,0.1); color: var(--accent2); border: 1px solid rgba(200,135,58,0.2); }
+  .pri-tag.l { background: rgba(90,82,72,0.2); color: var(--muted); border: 1px solid rgba(90,82,72,0.3); }
+
+  /* ── DIVIDER ─────────────────────────── */
+  .div { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* ── FOOTER ──────────────────────────── */
+  footer { padding: 44px 0 60px; }
+  .footer-note {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10.5px; color: var(--muted2);
+    line-height: 1.9; letter-spacing: 0.02em;
+    max-width: 680px;
+  }
+  .footer-note strong { color: var(--muted); font-weight: 400; }
+
+  /* ── REVEAL ANIMATIONS ───────────────── */
+  [data-reveal] {
+    opacity: 0; transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  [data-reveal].vis { opacity: 1; transform: none; }
+
+  code {
+    font-family: 'Azeret Mono', monospace; font-size: 11.5px;
+    background: rgba(255,235,190,0.06); padding: 1px 6px;
+    border-radius: 3px; color: var(--accent3);
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #2a2520; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#overview">Overview</a>
+    <a href="#gtm">GTM &amp; ICPs</a>
+    <a href="#competitors">Competitors</a>
+    <a href="#feedbacks">Feedbacks</a>
+    <a href="#collabs">Collabs</a>
+    <a href="#priority">Priority</a>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<header>
+  <div class="wrap">
+    <h1>Vocallabs.ai<br /><em>Product Teardown</em></h1>
+    <p class="header-sub">5 sharp, specific, research-backed feedbacks — walked through the live product, docs, SDK, and competitor landscape. Structured across the 5 Product Pillars.</p>
+    <div class="meta-row">
+      <div class="meta-item">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="2" stroke="#7a7060" stroke-width="1.3"/><path d="M1 7h14" stroke="#7a7060" stroke-width="1.3"/><path d="M5 1v4M11 1v4" stroke="#7a7060" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <strong>Deadline</strong>&nbsp;31 May 2026
+      </div>
+      <div class="meta-item">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#7a7060" stroke-width="1.3"/><path d="M8 4.5v4l2.5 1.5" stroke="#7a7060" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Method</strong>&nbsp;Live product walk · Competitor bench · Porter's Five Forces · SWOT
+      </div>
+      <div class="meta-item">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2C5.24 2 3 4.24 3 7c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5Z" stroke="#7a7060" stroke-width="1.3"/><circle cx="8" cy="7" r="1.5" stroke="#7a7060" stroke-width="1.3"/></svg>
+        <strong>Company</strong>&nbsp;Vocallabs.ai, Bengaluru
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="wrap">
+    <div class="section-label">Company Snapshot</div>
+    <h2>What Vocallabs Actually Is</h2>
+    <p style="max-width:680px">Vocallabs is a Bengaluru-based, IIT-alumni founded AI voice agent platform (est. 2024). It lets businesses replace call-center operators with autonomous voice AI agents for sales, support, and appointment booking — with the core claim of natural, unscripted conversation that handles Indian accents and languages natively.</p>
+    <p style="max-width:680px">The product has three distinct layers: a <strong style="color:var(--text);font-weight:500">hosted platform</strong> (custom AI agents via the dashboard), a <strong style="color:var(--text);font-weight:500">developer layer</strong> (SDK + n8n node + API), and an <strong style="color:var(--text);font-weight:500">open-source side door</strong> (VocalFlow, PocoDisk — developer acquisition plays). The GTM is currently sales-led with a "GET STARTED in 2 mins → demo call" funnel.</p>
+
+    <div class="snapshot-grid" data-reveal>
+      <div class="snap-card">
+        <div class="snap-label">Founded</div>
+        <div class="snap-val">2024</div>
+        <div class="snap-sub">Bengaluru, KA</div>
+      </div>
+      <div class="snap-card">
+        <div class="snap-label">Stage</div>
+        <div class="snap-val">Pre-seed</div>
+        <div class="snap-sub">Bootstrapped origins</div>
+      </div>
+      <div class="snap-card">
+        <div class="snap-label">Market Size</div>
+        <div class="snap-val">$47B</div>
+        <div class="snap-sub">Voice AI market 2025</div>
+      </div>
+      <div class="snap-card">
+        <div class="snap-label">India CAGR</div>
+        <div class="snap-val">23%</div>
+        <div class="snap-sub">Voice recognition sub-mkt</div>
+      </div>
+      <div class="snap-card">
+        <div class="snap-label">India Calls/Day</div>
+        <div class="snap-val">1B+</div>
+        <div class="snap-sub">30% business-related</div>
+      </div>
+      <div class="snap-card">
+        <div class="snap-label">Core Moat</div>
+        <div class="snap-val">India-first</div>
+        <div class="snap-sub">Language + workflow tuning</div>
+      </div>
+    </div>
+
+    <div class="div"></div>
+    <div class="section-label">Framework: SWOT</div>
+    <h3>Strengths, Weaknesses, Opportunities, Threats</h3>
+
+    <div class="swot-grid" data-reveal>
+      <div class="sw-box str">
+        <div class="sw-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#7a9e82" stroke-width="1.2"/><path d="M3.5 6.5l2 1.5 3-3.5" stroke="#7a9e82" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Strengths
+        </div>
+        <ul class="sw-list">
+          <li>India-first language &amp; accent tuning — rare in the space</li>
+          <li>Full-stack ownership: design → execution → analytics in one product</li>
+          <li>Open-source community plays (VocalFlow) driving developer awareness</li>
+          <li>Founder Joey Dash post-Subspace: proven consumer product DNA</li>
+          <li>Proprietary conversation intelligence / emotion analytics moat</li>
+          <li>Hybrid AI ↔ human agent handoff — critical for Indian SMBs</li>
+        </ul>
+      </div>
+      <div class="sw-box weak">
+        <div class="sw-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#b85c38" stroke-width="1.2"/><path d="M4 4l4 4M8 4l-4 4" stroke="#b85c38" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Weaknesses
+        </div>
+        <ul class="sw-list">
+          <li>Zero self-serve pricing visible publicly — all gated behind demo</li>
+          <li>No sandbox / playground for developer evaluation</li>
+          <li>Website renders blank on many pages (JS-heavy, no SSR fallback)</li>
+          <li>Blog content is heavily SEO-stuffed, dilutes brand authority</li>
+          <li>No public TRAI/DPDP compliance docs — blocks BFSI/healthcare deals</li>
+          <li>ICP clarity lacking: homepage tries to address SMB, mid-market, and enterprise simultaneously</li>
+        </ul>
+      </div>
+      <div class="sw-box opp">
+        <div class="sw-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#e8a04a" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Opportunities
+        </div>
+        <ul class="sw-list">
+          <li>1B+ daily Indian business calls — near-zero automated penetration today</li>
+          <li>BFSI (EMI reminders, collections) is highest-willingness-to-pay segment</li>
+          <li>WhatsApp-first India: voice agent → WhatsApp summary handoff is untapped</li>
+          <li>Sarvam / IndicVoices data partnerships for vernacular depth</li>
+          <li>Real estate &amp; D2C e-commerce (COD confirmation) are proven use cases</li>
+          <li>n8n community traction → product-led B2B growth channel</li>
+        </ul>
+      </div>
+      <div class="sw-box thr">
+        <div class="sw-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2L1 10h10L6 2Z" stroke="#7a7060" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 5.5V7.5M6 8.5v.5" stroke="#7a7060" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Threats
+        </div>
+        <ul class="sw-list">
+          <li>Bolna (YC + $6.3M General Catalyst) aggressively targeting same segment</li>
+          <li>Global platforms (VAPI, Retell) increasingly India-aware</li>
+          <li>ElevenLabs voice quality benchmark is rising fast</li>
+          <li>TRAI telemarketing regulation tightening — consent compliance risk</li>
+          <li>Google/Jio building vernacular voice layers natively into infrastructure</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GTM & ICPs -->
+<section id="gtm">
+  <div class="wrap">
+    <div class="section-label">Framework: 7Ps of GTM</div>
+    <h2>Go-To-Market &amp; Ideal Customer Profiles</h2>
+    <p style="max-width:680px">Vocallabs' current GTM is <strong style="color:var(--text);font-weight:500">sales-led, demo-gated</strong>. Every CTA on the site routes to a "Schedule Demo" form. This works for mid-market/enterprise relationships but entirely kills the growing developer and SMB self-serve opportunity — the exact segment Bolna is vacuuming up with INR-priced, API-first access.</p>
+    <p style="max-width:680px">The real distribution lever they're sitting on but underusing: VocalFlow (the open-source macOS dictation app) has developer reach. That community should be the funnel top for the paid voice agent product — and right now the two properties don't cross-sell at all.</p>
+
+    <div class="icp-grid" data-reveal>
+      <div class="icp-card">
+        <div class="icp-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13V7l6-5 6 5v6a1 1 0 01-1 1H3a1 1 0 01-1-1Z" stroke="#e8a04a" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 14v-4h4v4" stroke="#e8a04a" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="icp-industry">Real Estate</div>
+          <div class="icp-pain">Hundreds of daily inbound enquiries, agents overloaded. AI handles qualification, schedules site visits. High NPS sensitivity → emotion analytics is a direct upsell.</div>
+        </div>
+      </div>
+      <div class="icp-card">
+        <div class="icp-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="#e8a04a" stroke-width="1.3"/><path d="M5 8h6M5 5.5h6M5 10.5h4" stroke="#e8a04a" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="icp-industry">EdTech / Coaching</div>
+          <div class="icp-pain">Lead qualification from ad campaigns. Outbound follow-up on demo requests in Hindi/regional languages. Unread chats → proactive voice callback.</div>
+        </div>
+      </div>
+      <div class="icp-card">
+        <div class="icp-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a3 3 0 100 6 3 3 0 000-6Z" stroke="#e8a04a" stroke-width="1.3"/><path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="#e8a04a" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="icp-industry">Healthcare / Diagnostics</div>
+          <div class="icp-pain">Appointment booking, test report delivery, prescription reminders. Recurring, high-frequency, language-critical. HIPAA/compliance story must be watertight.</div>
+        </div>
+      </div>
+      <div class="icp-card">
+        <div class="icp-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="1.5" stroke="#e8a04a" stroke-width="1.3"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1" stroke="#e8a04a" stroke-width="1.3"/><path d="M2 8h12" stroke="#e8a04a" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <div class="icp-industry">BFSI — NBFCs / Fintech</div>
+          <div class="icp-pain">EMI reminders, loan collections, KYC follow-up. High willingness to pay per call. Requires TRAI/DPDP/RBI-compliant scripting — currently absent from Vocallabs' site.</div>
+        </div>
+      </div>
+      <div class="icp-card">
+        <div class="icp-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 12V8l5-5 5 5v4" stroke="#e8a04a" stroke-width="1.3" stroke-linejoin="round"/><rect x="6" y="9" width="4" height="3" rx="0.5" stroke="#e8a04a" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <div class="icp-industry">D2C / E-commerce</div>
+          <div class="icp-pain">COD order confirmation, cart abandonment callbacks, return handling. Even a 3% lift in COD confirmation rates is direct, measurable GMV impact.</div>
+        </div>
+      </div>
+      <div class="icp-card">
+        <div class="icp-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 2H3a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V3a1 1 0 00-1-1Z" stroke="#e8a04a" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="#e8a04a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="icp-industry">B2B SaaS / Agencies</div>
+          <div class="icp-pain">Developers building voice into their products. The n8n node and SDK are the hook. Self-serve sandbox + INR pricing are the unlocks — currently absent.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note-box" data-reveal>
+      <strong>GTM Gap:</strong> Vocallabs has no pricing page, no free trial, and no self-serve onboarding. Their closest Indian competitor Bolna charges ₹5.52/min with INR billing and a developer-friendly API. Every hour Vocallabs stays demo-gated is lost pipeline from the highest-growth segment of the market.
+    </div>
+  </div>
+</section>
+
+<!-- COMPETITORS -->
+<section id="competitors">
+  <div class="wrap">
+    <div class="section-label">Framework: Porter's Five Forces</div>
+    <h2>Competitive Landscape</h2>
+    <p style="max-width:680px">The India voice AI calling market has bifurcated: <strong style="color:var(--text);font-weight:500">global API platforms</strong> (VAPI, Retell, ElevenLabs) dominating developer segments; <strong style="color:var(--text);font-weight:500">India-native players</strong> (Bolna, Gnani, SquadStack, Caller Digital) fighting for enterprise and SMB; and IVR/telephony incumbents (Exotel, Ozonetel) adding AI layers. Vocallabs sits at the India-native frontier-model intersection — a rare position, but also the most contested.</p>
+
+    <div class="comp-wrap" data-reveal>
+      <table>
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Pricing Model</th>
+            <th>India Language</th>
+            <th>Self-Serve</th>
+            <th>Dev Experience</th>
+            <th>Key Differentiator</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="hl">
+            <td>Vocallabs.ai</td>
+            <td><span class="badge r">Demo-gated</span></td>
+            <td><span class="badge g">Strong (India-first)</span></td>
+            <td><span class="badge r">None</span></td>
+            <td><span class="badge y">SDK + n8n node</span></td>
+            <td>Full-stack + emotion analytics</td>
+          </tr>
+          <tr>
+            <td>Bolna (YC)</td>
+            <td><span class="badge g">₹5.52/min INR</span></td>
+            <td><span class="badge g">10+ Indian languages</span></td>
+            <td><span class="badge g">Yes, API-first</span></td>
+            <td><span class="badge g">Excellent (Sarvam)</span></td>
+            <td>Developer trust, India-priced</td>
+          </tr>
+          <tr>
+            <td>VAPI</td>
+            <td><span class="badge g">$0.05/min + usage</span></td>
+            <td><span class="badge r">Limited</span></td>
+            <td><span class="badge g">Yes, instant</span></td>
+            <td><span class="badge g">Best-in-class globally</span></td>
+            <td>Provider-agnostic, 62M calls/mo</td>
+          </tr>
+          <tr>
+            <td>Retell AI</td>
+            <td><span class="badge y">$450+/mo Pro</span></td>
+            <td><span class="badge r">Limited</span></td>
+            <td><span class="badge g">Yes (free tier removed)</span></td>
+            <td><span class="badge g">Excellent turn-taking</span></td>
+            <td>Enterprise compliance + structured flows</td>
+          </tr>
+          <tr>
+            <td>Gnani.ai</td>
+            <td><span class="badge r">Enterprise contract</span></td>
+            <td><span class="badge g">Deep (Tier-1 BFSI)</span></td>
+            <td><span class="badge r">None</span></td>
+            <td><span class="badge n">Moderate</span></td>
+            <td>Voice biometrics, India banking</td>
+          </tr>
+          <tr>
+            <td>ElevenLabs</td>
+            <td><span class="badge g">Usage-based</span></td>
+            <td><span class="badge y">Good (70+ languages)</span></td>
+            <td><span class="badge g">Yes, instant</span></td>
+            <td><span class="badge g">Best voice quality globally</span></td>
+            <td>&lt;100ms latency, voice cloning</td>
+          </tr>
+          <tr>
+            <td>SquadStack</td>
+            <td><span class="badge y">Outcome-based</span></td>
+            <td><span class="badge g">Strong (India)</span></td>
+            <td><span class="badge r">Managed service</span></td>
+            <td><span class="badge r">Not developer-facing</span></td>
+            <td>Human-AI hybrid, proven enterprise ROI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note-box" data-reveal>
+      <strong>Porter's Lens — Competitive Rivalry (HIGH):</strong> At least 7 well-funded players in the same segment. <strong>Threat of New Entrants (MEDIUM):</strong> India-specific workflow integration creates switching costs, but Google/Jio building vernacular voice natively is the existential risk. <strong>Buyer Power (MEDIUM-HIGH):</strong> SMBs are price-sensitive; self-serve pricing transparency is table stakes. <strong>Vocallabs' defensible wedge</strong> = emotion + intent analytics layer — no competitor runs this as a front-facing differentiator in India.
+    </div>
+  </div>
+</section>
+
+<!-- FEEDBACKS -->
+<section id="feedbacks">
+  <div class="wrap">
+    <div class="section-label">5 Product Feedbacks</div>
+    <h2>Sharp Observations → Real Problems → Specific Ships</h2>
+    <p style="color:var(--muted);margin-bottom:32px;font-size:13.5px">Each feedback structured as (a) Observed &nbsp;·&nbsp; (b) Problem &nbsp;·&nbsp; (c) Ship instead. Drawn from live product walk, docs, GitHub repos, and competitor benchmarking.</p>
+
+    <!-- F1 -->
+    <div class="fb-card" data-reveal>
+      <div class="fb-card-header">
+        <div>
+          <div class="fb-num">Feedback 01</div>
+          <div class="fb-title">The demo wall kills developer self-serve entirely</div>
+          <div class="fb-subtitle">Every CTA routes to a calendar booking form. No playground, no sandbox, no instant API key.</div>
+        </div>
+        <span class="fb-pillar">GTM &amp; ICPs</span>
+      </div>
+      <div class="obs-cols">
+        <div class="obs-col">
+          <div class="obs-col-label lbl-obs">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d4c4a0" stroke-width="1.1"/><circle cx="5" cy="5" r="1.5" fill="#d4c4a0"/></svg>
+            Observed
+          </div>
+          <p>Clicking "GET STARTED ⚡ 2 mins" on vocallabs.ai lands on a <code>/contact</code> form asking for company name, email, and phone. No trial, no API key flow, no pricing visible. The docs page exists but has no quickstart. GitHub has an SDK repo and n8n node, but no README live demo or API playground link. A developer evaluating Vocallabs vs Bolna can go live on Bolna in under an hour; Vocallabs requires waiting for a human to respond.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-prob">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1Z" stroke="#b85c38" stroke-width="1.1" stroke-linejoin="round"/><path d="M5 4v2.5" stroke="#b85c38" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Problem
+          </div>
+          <p>The global quality bar for AI developer tools is instant gratification. VAPI, Retell, and Bolna all offer immediate API keys with a free tier. Vocallabs' funnel is designed for enterprise sales cycles — completely misaligned with the bottom-up developer and SMB motion that drives fastest early growth. Every developer who can't make a test call within 10 minutes is a lost evangelizer. At pre-seed stage, these are the users who write the tweets and product reviews that build organic pipeline.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-ship">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5 2l3 3-3 3" stroke="#7a9e82" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Ship Instead
+          </div>
+          <p><strong style="color:var(--cream);font-weight:500">Build a 5-minute self-serve onboarding:</strong> Google SSO → API key issued instantly → pre-built "Test Agent" that calls a number you enter. Display INR-first pricing tiers publicly (₹3–6/min based on volume). Wire the SDK README to a Replit/CodeSandbox live environment. Add a banner in VocalFlow: "Build your own voice agent in 5 minutes →" — that open-source community is the warm developer audience already.</p>
+        </div>
+      </div>
+      <div class="fb-foot">
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Impact</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+        </div>
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Effort</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F2 -->
+    <div class="fb-card c2" data-reveal>
+      <div class="fb-card-header">
+        <div>
+          <div class="fb-num">Feedback 02</div>
+          <div class="fb-title">Emotion analytics is buried — it should be the headline</div>
+          <div class="fb-subtitle">The most defensible, India-unique feature has zero visual proof on the website and no demo surface.</div>
+        </div>
+        <span class="fb-pillar">Features / Services</span>
+      </div>
+      <div class="obs-cols">
+        <div class="obs-col">
+          <div class="obs-col-label lbl-obs">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d4c4a0" stroke-width="1.1"/><circle cx="5" cy="5" r="1.5" fill="#d4c4a0"/></svg>
+            Observed
+          </div>
+          <p>Vocallabs lists "Voice analytics: emotion, intent &amp; tone beyond transcription" in its feature deck — a genuinely differentiated capability. But on the actual website, this is mentioned in one line with no screenshot, no demo video, no dashboard preview, and no case study metric quantifying its value. Competitors like VAPI and Retell don't surface emotion tagging at all. A third-party Medium article describes Vocallabs' emotion intelligence in far more compelling terms than Vocallabs does on its own homepage.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-prob">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1Z" stroke="#b85c38" stroke-width="1.1" stroke-linejoin="round"/><path d="M5 4v2.5" stroke="#b85c38" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Problem
+          </div>
+          <p>The conversation intelligence layer — real-time emotion tagging, tone drift detection, intent mapping — is what turns a cost-reduction tool into a <em>revenue intelligence</em> platform. The moment a sales head can say "our AI detected rising frustration in 34% of EdTech demo calls at the pricing objection", it's a completely different ROI conversation. By not showing this feature, Vocallabs competes on the weakest dimension (voice quality, which ElevenLabs and Google will commoditize) instead of the strongest one.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-ship">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5 2l3 3-3 3" stroke="#7a9e82" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Ship Instead
+          </div>
+          <p><strong style="color:var(--cream);font-weight:500">Make emotion analytics the hero product story.</strong> Build one interactive "Live Analytics Demo" on the homepage: upload a 30-second audio clip → Vocallabs tags sentiment, intent, tone shifts with a visual timeline. No sign-up needed. Add one real customer quote. Add a dashboard screenshot showing emotion heatmaps per call. Position the product not as "AI call automation" but as <em>Conversation Intelligence for Indian businesses</em> — that's a category of one right now.</p>
+        </div>
+      </div>
+      <div class="fb-foot">
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Impact</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+        </div>
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Effort</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F3 -->
+    <div class="fb-card c3" data-reveal>
+      <div class="fb-card-header">
+        <div>
+          <div class="fb-num">Feedback 03</div>
+          <div class="fb-title">No compliance story means BFSI deals die in procurement</div>
+          <div class="fb-subtitle">The highest-willingness-to-pay segment (NBFCs, insurers) can't clear infosec review without TRAI/DPDP documentation.</div>
+        </div>
+        <span class="fb-pillar">Features / Services</span>
+      </div>
+      <div class="obs-cols">
+        <div class="obs-col">
+          <div class="obs-col-label lbl-obs">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d4c4a0" stroke-width="1.1"/><circle cx="5" cy="5" r="1.5" fill="#d4c4a0"/></svg>
+            Observed
+          </div>
+          <p>Vocallabs shows 7 generic security badge images in its footer — no labels, no certificate details visible. The <code>/dpa</code> page exists legally but is buried. There is no dedicated page for: TRAI telemarketing registration workflow, DPDP consent capture trail, how call recordings are stored, whether DLT registration is handled, or which Indian telephony providers (Exotel, Ozonetel, Plivo, Knowlarity) are natively integrated. Competitor Gnani.ai has a dedicated "Financial Services Compliance" section; Caller Digital publishes RBI-compliant scripting libraries.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-prob">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1Z" stroke="#b85c38" stroke-width="1.1" stroke-linejoin="round"/><path d="M5 4v2.5" stroke="#b85c38" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Problem
+          </div>
+          <p>BFSI is India's highest-ARPU enterprise segment for voice automation — EMI reminders, loan collections, policy renewals. But BFSI has a mandatory internal infosec review. Without documented answers to "where does call data reside?" and "how is DPDP consent captured?", a CISO will block the deal regardless of product demo quality. Bolna's own analyst notes flag this as their weakness too; Vocallabs has the same gap but no narrative at all. This is a zero-effort sales blocker: one doc page unlocks an entire vertical.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-ship">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5 2l3 3-3 3" stroke="#7a9e82" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Ship Instead
+          </div>
+          <p><strong style="color:var(--cream);font-weight:500">Ship a "Trust &amp; Compliance" page in 2 weeks.</strong> Document: (1) Data residency — Indian servers, no cross-border transfer. (2) TRAI compliance — pre-call consent capture flow, DNC scrubbing, call recording disclosure. (3) DPDP readiness — consent log schema, right-to-erasure API. (4) Telephony partners — official Exotel/Ozonetel/Plivo integration docs. (5) Indian DLT registration guidance. This doesn't require building anything new — it's documenting what likely already exists.</p>
+        </div>
+      </div>
+      <div class="fb-foot">
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Impact</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+        </div>
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Effort</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F4 -->
+    <div class="fb-card c4" data-reveal>
+      <div class="fb-card-header">
+        <div>
+          <div class="fb-num">Feedback 04</div>
+          <div class="fb-title">The navbar reads "YourBrand YB" — live on every page</div>
+          <div class="fb-subtitle">A template placeholder is publicly visible across the entire site, signaling fragility to enterprise evaluators.</div>
+        </div>
+        <span class="fb-pillar">UX</span>
+      </div>
+      <div class="obs-cols">
+        <div class="obs-col">
+          <div class="obs-col-label lbl-obs">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d4c4a0" stroke-width="1.1"/><circle cx="5" cy="5" r="1.5" fill="#d4c4a0"/></svg>
+            Observed
+          </div>
+          <p>Walking through vocallabs.ai, the navigation bar renders the text "YourBrand" with initials "YB" alongside the actual Vocallabs logo. This is present on <code>vocallabs.ai</code>, <code>vocallabs.ai/blogs</code>, <code>vocallabs.ai/vocalflow</code>, and every other public page. It appears to be a CMS template default (the platform powering the site — their own Subspace/whatsub infrastructure) that was never replaced. The page source confirms the string "YourBrandYB" is in the raw HTML.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-prob">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1Z" stroke="#b85c38" stroke-width="1.1" stroke-linejoin="round"/><path d="M5 4v2.5" stroke="#b85c38" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Problem
+          </div>
+          <p>This is a trust-signal failure at the exact moment an enterprise buyer is evaluating the platform. A VP of Sales at an NBFC visiting the site to approve a pilot sees "YourBrand" in the top nav — the immediate signal is: "this product is not production-ready; the founders haven't QA'd their own website." For a company whose core claim is production-grade AI infrastructure, a visible template artifact is catastrophically inconsistent with the brand promise. If the landing page has this, what's in the API?</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-ship">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5 2l3 3-3 3" stroke="#7a9e82" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Ship Instead
+          </div>
+          <p><strong style="color:var(--cream);font-weight:500">Fix this today</strong> — it's a 5-minute config change (replace "YourBrand" with "Vocallabs" in the navbar template variable). More broadly: add a Playwright smoke test that flags any page with the strings "YourBrand", "Lorem ipsum", or "Template" in visible text before any deploy. Run a full brand audit — check meta OG tags, Twitter cards, and favicon for consistent Vocallabs branding. This takes a day and removes a silent deal-killer.</p>
+        </div>
+      </div>
+      <div class="fb-foot">
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Impact</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+        </div>
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Effort</span>
+          <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F5 -->
+    <div class="fb-card c5" data-reveal>
+      <div class="fb-card-header">
+        <div>
+          <div class="fb-num">Feedback 05</div>
+          <div class="fb-title">The blog publishes daily but signals low authority</div>
+          <div class="fb-subtitle">14 pages of generic AI explainers. Zero original data, zero founder POV, zero India-specific insight a competitor couldn't clone in 10 minutes.</div>
+        </div>
+        <span class="fb-pillar">GTM &amp; ICPs</span>
+      </div>
+      <div class="obs-cols">
+        <div class="obs-col">
+          <div class="obs-col-label lbl-obs">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#d4c4a0" stroke-width="1.1"/><circle cx="5" cy="5" r="1.5" fill="#d4c4a0"/></svg>
+            Observed
+          </div>
+          <p>The Vocallabs blog shows 14+ pages of posts published daily (May 2026: "Conversational AI in Retail", "E-commerce Chatbots", "Replicant Alternatives", "What is Answering Service Pricing?"). Every post is a long-form SEO article for generic keywords. None cite original Vocallabs data. No post is authored by the founding team. There's no "State of AI Calls in India" original research, no published customer ROI story, and blog categories include "Vocalassist" and "Vocal App" — suggesting portfolio products not prominently marketed, further diluting the brand.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-prob">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1Z" stroke="#b85c38" stroke-width="1.1" stroke-linejoin="round"/><path d="M5 4v2.5" stroke="#b85c38" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Problem
+          </div>
+          <p>Content velocity without authority is noise. A buyer researching "India voice AI for real estate" lands on a Vocallabs blog post, sees it's a generic explainer indistinguishable from Bolna, Gnani, or OnDial's blog, and leaves without attributing any expertise to Vocallabs. Worse: publishing content about "Replicant Alternatives" is free SEO traffic for competitors' branded searches — zero purchase intent. This content budget could instead build the category-defining "India Voice AI Benchmark 2026" that no competitor has published.</p>
+        </div>
+        <div class="obs-col">
+          <div class="obs-col-label lbl-ship">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5 2l3 3-3 3" stroke="#7a9e82" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Ship Instead
+          </div>
+          <p><strong style="color:var(--cream);font-weight:500">Shift from content volume to content authority.</strong> (1) Publish "The India Voice AI Benchmark 2026" — 500 real calls across 5 industries, emotion analytics data, language accuracy benchmarks vs. Bolna/VAPI. No one else can write this. (2) Joey Dash writes one "Founder's Log" per month. (3) Kill the competitor-keyword SEO posts. (4) Replace 10 generic articles with 1 real customer story with actual conversation flow screenshots. Qualified BFSI/EdTech prospects will self-identify and inbound.</p>
+        </div>
+      </div>
+      <div class="fb-foot">
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Impact</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        <div class="fb-foot-group">
+          <span class="fb-foot-label">Effort</span>
+          <div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- COLLABS -->
+<section id="collabs">
+  <div class="wrap">
+    <div class="section-label">Potential Collaborations</div>
+    <h2>High-Leverage Partnership Opportunities</h2>
+    <p style="color:var(--muted);margin-bottom:4px;font-size:13.5px">Partnerships evaluated on: distribution reach, data moat reinforcement, and India-market specificity.</p>
+
+    <div class="collab-grid" data-reveal>
+      <div class="collab-card">
+        <div class="collab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="8" r="3" stroke="#c8873a" stroke-width="1.3"/><circle cx="10.5" cy="8" r="3" stroke="#c8873a" stroke-width="1.3"/><path d="M8 5.5v5" stroke="#c8873a" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="collab-name">Sarvam AI</div>
+          <div class="collab-type">Technology · Vernacular Language Layer</div>
+          <div class="collab-why">Best-in-class Indian language STT/TTS (22 languages, IndicVoices dataset, government-backed). Integrating Sarvam as the voice foundation gives Vocallabs a credible "best Indian accent coverage" claim that Bolna already leverages. Potential: official integration partner, co-marketing to BFSI and government enterprise.</div>
+        </div>
+      </div>
+      <div class="collab-card">
+        <div class="collab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M3 8h10M3 11h6" stroke="#c8873a" stroke-width="1.3" stroke-linecap="round"/><rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="#c8873a" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <div class="collab-name">Exotel / Ozonetel</div>
+          <div class="collab-type">Distribution · Telephony Infrastructure</div>
+          <div class="collab-why">India's two dominant cloud telephony platforms (Exotel serves 6,000+ Indian enterprises). A certified "Vocallabs-powered AI agent" integration in the Exotel marketplace instantly adds their entire customer base as warm distribution. Exotel customers already have telephony set up — adding an AI layer is the natural next upsell.</div>
+        </div>
+      </div>
+      <div class="collab-card">
+        <div class="collab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="2" stroke="#c8873a" stroke-width="1.3"/><circle cx="12" cy="4" r="2" stroke="#c8873a" stroke-width="1.3"/><circle cx="12" cy="12" r="2" stroke="#c8873a" stroke-width="1.3"/><path d="M6 7.5L10 5M6 8.5L10 11" stroke="#c8873a" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <div class="collab-name">n8n Community</div>
+          <div class="collab-type">Developer Distribution · Workflow Automation</div>
+          <div class="collab-why">Vocallabs already has an official n8n community node (published April 2026). The n8n community has 350,000+ active workflow builders who are exactly the "no-code AI automation" buyer. A co-marketed "Voice AI Workflow Templates" pack in the n8n template library could drive thousands of qualified signups without any outbound sales effort.</div>
+        </div>
+      </div>
+      <div class="collab-card">
+        <div class="collab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="1.5" stroke="#c8873a" stroke-width="1.3"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1" stroke="#c8873a" stroke-width="1.3"/><path d="M2 8h12" stroke="#c8873a" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <div class="collab-name">Zoho / Salesforce India</div>
+          <div class="collab-type">Enterprise Distribution · CRM Native Integration</div>
+          <div class="collab-why">Zoho is the dominant CRM for Indian SMBs. Building a native "Vocallabs Voice Agent" inside the Zoho Marketplace or Salesforce AppExchange makes the integration the default choice for existing CRM users — no separate procurement. Vocallabs already lists Salesforce, HubSpot, Zoho as supported CRMs but has no marketplace listing.</div>
+        </div>
+      </div>
+      <div class="collab-card">
+        <div class="collab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 8c0 3.04-2.46 5.5-5.5 5.5S2.5 11.04 2.5 8 4.96 2.5 8 2.5s5.5 2.46 5.5 5.5Z" stroke="#c8873a" stroke-width="1.3"/><path d="M5 8.5c0 0 1-2 3-2s3 2 3 2" stroke="#c8873a" stroke-width="1.3" stroke-linecap="round"/><path d="M6 6.5v.5M10 6.5v.5" stroke="#c8873a" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="collab-name">WhatsApp Business API Partners</div>
+          <div class="collab-type">User Journey · Omnichannel Completion</div>
+          <div class="collab-why">India is WhatsApp-first. The killer feature: AI voice call handles the conversation → automatically sends a WhatsApp summary with booking confirmation. A partnership with Interakt, Wati, or direct Meta approval would differentiate Vocallabs on a feature no pure-voice-AI competitor currently offers as native.</div>
+        </div>
+      </div>
+      <div class="collab-card">
+        <div class="collab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13V7l6-5 6 5v6a1 1 0 01-1 1H3a1 1 0 01-1-1Z" stroke="#c8873a" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 14v-4h4v4" stroke="#c8873a" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="collab-name">99acres / MagicBricks</div>
+          <div class="collab-type">Vertical Distribution · High-Intent Leads</div>
+          <div class="collab-why">Real estate portals generate millions of property enquiry leads daily — agents can't manually follow up all of them. A co-marketing arrangement where Vocallabs is the endorsed "lead follow-up automation" layer for broker partners gives immediate traction in one of the most receptive ICPs. The ROI story (3x more site visits booked) is concrete and measurable.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIORITY -->
+<section id="priority">
+  <div class="wrap">
+    <div class="section-label">Prioritisation Logic</div>
+    <h2>Sequencing: What to Ship First</h2>
+    <p style="color:var(--muted);margin-bottom:4px;font-size:13.5px">Ordered by: (Revenue unblocked × Speed of execution) ÷ Effort. The first two items require no engineering — they're pure product and content decisions.</p>
+
+    <div class="pri-list" data-reveal>
+      <div class="pri-item">
+        <div class="pri-rank">1</div>
+        <div class="pri-body">
+          <div class="pri-title">Fix "YourBrand YB" navbar + publish Trust &amp; Compliance page</div>
+          <div class="pri-reason">Immediate trust-signal repair. Zero engineering. Unblocks BFSI demos that are silently dying in procurement reviews.</div>
+        </div>
+        <span class="pri-tag q">Quick Win</span>
+      </div>
+      <div class="pri-item">
+        <div class="pri-rank">2</div>
+        <div class="pri-body">
+          <div class="pri-title">Launch self-serve onboarding + public INR pricing</div>
+          <div class="pri-reason">Directly competes with Bolna's developer advantage. Every day without this, Bolna widens the developer mindshare gap.</div>
+        </div>
+        <span class="pri-tag q">Quick Win</span>
+      </div>
+      <div class="pri-item">
+        <div class="pri-rank">3</div>
+        <div class="pri-body">
+          <div class="pri-title">Build emotion analytics interactive demo on homepage</div>
+          <div class="pri-reason">Repositions from "voice automation" to "conversation intelligence" — a category with 0 direct Indian competitors. High marketing ROI.</div>
+        </div>
+        <span class="pri-tag m">Medium Term</span>
+      </div>
+      <div class="pri-item">
+        <div class="pri-rank">4</div>
+        <div class="pri-body">
+          <div class="pri-title">Publish "India Voice AI Benchmark 2026" original research</div>
+          <div class="pri-reason">Category-defining content no competitor can replicate. Positions Joey Dash as the domain authority voice in India AI.</div>
+        </div>
+        <span class="pri-tag m">Medium Term</span>
+      </div>
+      <div class="pri-item">
+        <div class="pri-rank">5</div>
+        <div class="pri-body">
+          <div class="pri-title">Sarvam AI integration + Exotel Marketplace listing</div>
+          <div class="pri-reason">Expands distribution to Exotel's 6,000+ enterprise customers and strengthens the vernacular moat vs. Bolna.</div>
+        </div>
+        <span class="pri-tag l">Long Term</span>
+      </div>
+    </div>
+
+    <div class="note-box" data-reveal style="margin-top:28px">
+      <strong>One-Line Synthesis:</strong> Vocallabs has a genuinely differentiated core (India-first, emotion analytics, full-stack ownership) sitting behind a fragile GTM layer (demo-gated, no pricing, visible template artifacts). The gap between product quality and presentation quality is itself the biggest product problem — and most of it is fixable in the next 30 days without a single line of new code.
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-note">
+      <strong>Product Teardown · Vocallabs.ai</strong> · Submitted for Product Intern Application · Deadline 31 May 2026<br />
+      Research sources: vocallabs.ai (live product), docs.vocallabs.ai, github.com/Vocallabsai, Crunchbase, Inc42, caller.digital (India voice AI benchmark 2026), yourstory.com (Bolna funding analysis), pickaxe.co, arahi.ai (global platform benchmark), IMARC (India voice market sizing). All observations are first-party — drawn from walking through the live website, blog, docs, and GitHub repositories.
+    </div>
+  </div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('vis');
+      e.target.querySelectorAll('[data-reveal]').forEach((c, i) => {
+        c.style.transitionDelay = (i * 70) + 'ms';
+        c.classList.add('vis');
+      });
+    }
+  });
+}, { threshold: 0.06 });
+
+document.querySelectorAll('[data-reveal]').forEach(el => obs.observe(el));
+
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('nav a');
+const secObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(a => {
+        a.style.color = '';
+        a.style.borderBottomColor = 'transparent';
+        if (a.getAttribute('href') === '#' + e.target.id) {
+          a.style.color = '#e8dcc8';
+          a.style.borderBottomColor = '#c8873a';
+        }
+      });
+    }
+  });
+}, { threshold: 0.25 });
+sections.forEach(s => secObs.observe(s));
+</script>
+</body>
+</html>
