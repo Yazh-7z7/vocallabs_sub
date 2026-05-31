@@ -29,7 +29,7 @@ As a product manager, understanding the execution layer is critical. This teardo
 ##  How to View
 
 **Option 1 (Recommended):** View the live, hosted version via GitHub Pages:  
-👉 **[vocallabs-teardown.live](#)** **Option 2:** Run locally (Mac/Linux optimized):
+👉 **[(https://yazh-7z7.github.io/vocallabs_sub/)](#)** **Option 2:** Run locally (Mac/Linux optimized):
 ```bash
 # Clone the repository
 git clone [https://github.com/](https://github.com/)[your-github-username]/[repo-name].git
