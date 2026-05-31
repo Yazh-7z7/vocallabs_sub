@@ -1,6 +1,6 @@
 # Vocallabs.ai - Product Teardown 
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-View_Teardown-c8873a?style=for-the-badge)](https://[your-github-username].github.io/[repo-name])
+[![Live Demo](https://img.shields.io/badge/Live_Demo-View_Teardown-c8873a?style=for-the-badge)](https://yazh-7z7.github.io/vocallabs_sub/)
 [![Role](https://img.shields.io/badge/Role-Product_Intern-181510?style=for-the-badge&logo=google-scholar)](#)
 [![Date](https://img.shields.io/badge/Submitted-May_2026-7a9e82?style=for-the-badge)](#)
 
